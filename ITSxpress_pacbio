@@ -1,0 +1,6 @@
+#Code for trimming full-length ITS sequence to only ITS2 region.
+
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate itsxenv
+
+ITSx -i $1/pacbio_refseq.fasta -o $1/pacbio_ITSx --preserve --only ITS2 --cpu 4 --taxa F
