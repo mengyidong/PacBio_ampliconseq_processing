@@ -1,0 +1,179 @@
+---
+title: "R_PacBio_16S_pipeline"
+author: "Mengyi Dong"
+date: "2025-04-29"
+output: html_document
+---
+
+# Load libraries and directories
+```{r}
+#Install missing packages
+BiocManager::install("dada2")
+BiocManager::install("phyloseq")
+BiocManager::install("seqTools")
+```
+
+```{r}
+library(dada2)
+library(Biostrings)
+library(ShortRead)
+library(ggplot2)
+library(reshape2)
+library(gridExtra)
+library(phyloseq)
+
+library(magrittr)
+library(fs)
+library(tidyverse)
+library(vegan)
+library(tools)
+library(seqTools)
+```
+
+#Set up path
+```{r}
+data.dir <- "/hpc/group/ldavidlab/users/md486/HosSwab/16S" # CHANGE ME to location of the First Replicate fastq files
+
+# Directories for temporary files 
+path.out <- "/hpc/group/ldavidlab/users/md486/HosSwab/temp_16S"
+path.rds <- "/hpc/group/ldavidlab/users/md486/HosSwab/temp_16S/RDS"
+
+fns <- list.files(data.dir, pattern="fastq.gz", full.names=TRUE)
+
+rc <- dada2:::rc
+
+theme_set(theme_bw())
+```
+
+```{r}
+old <- Sys.time() # get start time
+```
+
+#Process data
+##Remove primers and filter
+```{r}
+F27 <- "AGRGTTYGATYMTGGCTCAG"
+R1492 <- "RGYTACCTTGTTACGACTT"
+
+nops <- file.path(data.dir, "noprimers", basename(fns))
+prim <- removePrimers(fns, nops, primer.fwd=F27, primer.rev=dada2:::rc(R1492), orient=TRUE)
+```
+
+##Length distribution
+```{r}
+lens.fn <- lapply(nops, function(fn) nchar(getSequences(fn)))
+lens <- do.call(c, lens.fn)
+hist(lens, 100)
+```
+
+##Filter
+```{r}
+filts <- file.path(data.dir, "noprimers", "filtered", basename(fns))
+track <- filterAndTrim(nops, filts, minQ=3, minLen=1000, maxLen=1600, maxN=0, rm.phix=FALSE, maxEE=2)
+track
+```
+
+#Run DADA2
+## Dereplicate
+```{r}
+drp <- derepFastq(filts, verbose=TRUE)
+
+saveRDS(drp, file.path(path.rds, "drp_derepFastq.rds"))
+
+#Learn errors
+err <- learnErrors(drp, errorEstimationFunction=PacBioErrfun, BAND_SIZE=32, multithread=TRUE)
+
+saveRDS(err, file.path(path.rds, "DADA2_Derep_16S.rds"))
+
+#Inspect errors:
+plotErrors(err)
+```
+
+##Denoise
+```{r}
+dd <- dada(drp, err=err,BAND_SIZE=32, multithread=TRUE)
+
+saveRDS(dd, file.path(path.rds, "DADA2_Denoise_16S.rds"))
+
+#Read tracking
+cbind(ccs=prim[,1], primers=prim[,2], filtered=track[,2], denoised=sapply(dd, function(x) sum(x$denoised)))
+
+#Sequence table
+st <- makeSequenceTable(dd)
+dim(st)
+```
+
+#Taxonomy and Chimera
+```{r}
+tax <- assignTaxonomy(st, "/hpc/group/ldavidlab/users/md486/PacBio_pipeline/Reference/gg2_2024_09_toSpecies_trainset.fa.gz", multithread=TRUE) # Slowest part
+tax <- addSpecies(tax, "/hpc/group/ldavidlab/users/md486/PacBio_pipeline/Reference/silva_species_assignment_v138.1.fa.gz")
+
+tax[,"Genus"] <- gsub("Escherichia/Shigella", "Escherichia", tax[,"Genus"]) # Reformat to be compatible with other data sources
+head(unname(tax))
+
+# Check chimeras
+bim <- isBimeraDenovo(st, minFoldParentOverAbundance=3.5, multithread=TRUE)
+table(bim)
+
+sum(st[,bim])/sum(st)
+
+#Extract sample names from filenames:
+file.names <- basename(fns)
+sample.names <- sub(".*\\.hifi_reads\\.(.*?)\\.hifi_reads\\.fastq\\.gz", "\\1", file.names)
+rownames(st) <- sample.names
+sample.names
+
+#Save processed objects
+saveRDS(st, file.path(path.rds, "Sequence_Table_16S.rds"))
+saveRDS(tax, file.path(path.rds, "Taxonomy_Silva138_VT_UPF.rds"))
+
+#Reload processed data
+st <- readRDS(file.path(path.rds, "Sequence_Table_16S.rds"))
+tax <- readRDS(file.path(path.rds, "Taxonomy_Silva138.rds"))
+```
+
+#Metadata
+```{r}
+df <- read.csv("/hpc/group/ldavidlab/users/md486/HosSwab/metadata_16S.csv", header = TRUE, row.names = 1)
+head(df)
+```
+
+#Save and export as phyloseq object
+```{r}
+otus = otu_table(st, taxa_are_rows=FALSE)
+sd = sample_data(df)
+ps <- phyloseq(otus,
+               sd,
+               tax_table(tax))
+```
+
+```{r}
+# Extract DNA sequences and add them as reference sequences 
+dna <- Biostrings::DNAStringSet(taxa_names(ps))
+names(dna) <- taxa_names(ps)
+ps@refseq <- dna
+ps
+```
+
+```{r}
+# Optional: Give ASVs numbers which are easier for graphing & analyzing than the full sequence 
+taxa_names(ps) <- paste0("ASV", seq(ntaxa(ps)))  
+ps
+```
+
+```{r}
+# Export final phyloseq object and check that it was written and saved correctly
+saveRDS(ps, file.path(path.rds, "ps_PacBio_16S.rds"))
+
+ps <- readRDS(file.path(path.rds, "ps_PacBio_16S.rds"))
+```
+
+```{r}
+new <- Sys.time() - old # calculate difference
+print(new) # print in nice format
+```
+
+#Reproducibility
+```{r}
+sessionInfo()
+```
