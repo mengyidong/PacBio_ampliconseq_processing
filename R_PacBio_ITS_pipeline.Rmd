@@ -1,8 +1,8 @@
 ---
-title: "PacBio_ITS_pipeline"
-author: "Mengyi Dong"
-date: "2025-04-01"
-output: html_document
+# PacBio ITS processing workflow for [PreMiEr Project/manuscript]
+# Adapted from Benjamin Callahan's public PacBio pipeline:
+# https://benjjneb.github.io/LRASManuscript/LRASms_fecal.html
+# Project-specific modifications by Mengyi Dong and Eva Kim
 ---
 # Load libraries and directories
 ```{r}
@@ -29,7 +29,7 @@ library(seqTools)
 rm(list=ls()) # clear environment 
 
 # Project-related directories: change as needed! 
-dmc.dir = file.path("/hpc/group/ldavidlab/users/md486/PacBio_pipeline") # CHANGE ME to parent directory
+dmc.dir = file.path("/data/folder/PacBio_pipeline") # CHANGE ME to parent directory
 git.dir = file.path(dmc.dir, "ITS") # CHANGE ME to project directory
 data.dir = file.path(dmc.dir, "ITS") # CHANGE ME to where sequencing files are stored (.fastq.gz)
 
@@ -38,7 +38,7 @@ meta.file = file.path(dmc.dir, "metadata_ITS.csv") # CHANGE ME to where metadata
 meta.df = read_csv(meta.file)
 
 # Directories for temporary files 
-scratch.dir = file.path("/hpc/group/ldavidlab/users/md486/HosSwab/temp") # CHANGE ME to project work directory
+scratch.dir = file.path("/output/data/temp") # CHANGE ME to project work directory
 ### change me to your NetID!! If you don't have a work folder already, create one by running the following codes on Terminal portion of RStudio: 
 ### cd /work/
 ### mkdir NETID          
@@ -75,7 +75,7 @@ Sys.setenv(NOPRIMERS_DIR = noprimers.dir)
 ### Unite database: 2/19/25, all eukaryotes downloaded from https://doi.plutof.ut.ee/doi/10.15156/BIO/3301231
 ### see https://benjjneb.github.io/dada2/training.html for Dr. Callhan's recommendation for this database
 
-database.dir = file.path("/hpc/group/ldavidlab/users/md486/PacBio_pipeline/Reference") # CHANGE ME to database folder 
+database.dir = file.path("/data/folder/Reference") # CHANGE ME to database folder 
 unite.ref = path.expand(file.path(database.dir, paste0("sh_general_release_dynamic_all_19.02.2025_dev.fasta")))
 ```
 
