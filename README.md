@@ -25,8 +25,8 @@ If you use this repository, please cite:
 
 ## Contributors
 
-- Mengyi Dong
-- Eva Kim
+- Mengyi Dong (mengyidong@vt.edu)
+- Eva Kim (yeon.ji.kim@duke.edu)
 
 ## Version used for manuscript
 
@@ -43,4 +43,5 @@ This release reflects the exact code used for the manuscript analyses. Later imp
 
 ## Contact
 
-Mengyi Dong  
+Mengyi Dong
+mengyidong@vt.edu
