@@ -1,8 +1,8 @@
 ---
-title: "R_PacBio_16S_pipeline"
-author: "Mengyi Dong"
-date: "2025-04-29"
-output: html_document
+# PacBio 16S/ITS processing workflow for [PreMiEr Project/manuscript]
+# Adapted from Benjamin Callahan's public PacBio pipeline:
+# https://benjjneb.github.io/LRASManuscript/LRASms_fecal.html
+# Project-specific modifications by Mengyi Dong
 ---
 
 # Load libraries and directories
@@ -32,11 +32,11 @@ library(seqTools)
 
 #Set up path
 ```{r}
-data.dir <- "/hpc/group/ldavidlab/users/md486/HosSwab/16S" # CHANGE ME to location of the First Replicate fastq files
+data.dir <- "/data/folder/16S" # CHANGE ME to location of the First Replicate fastq files
 
 # Directories for temporary files 
-path.out <- "/hpc/group/ldavidlab/users/md486/HosSwab/temp_16S"
-path.rds <- "/hpc/group/ldavidlab/users/md486/HosSwab/temp_16S/RDS"
+path.out <- "/output/data/folder/temp_16S"
+path.rds <- "/output/data/folder/temp_16S/RDS"
 
 fns <- list.files(data.dir, pattern="fastq.gz", full.names=TRUE)
 
@@ -105,8 +105,8 @@ dim(st)
 
 #Taxonomy and Chimera
 ```{r}
-tax <- assignTaxonomy(st, "/hpc/group/ldavidlab/users/md486/PacBio_pipeline/Reference/gg2_2024_09_toSpecies_trainset.fa.gz", multithread=TRUE) # Slowest part
-tax <- addSpecies(tax, "/hpc/group/ldavidlab/users/md486/PacBio_pipeline/Reference/silva_species_assignment_v138.1.fa.gz")
+tax <- assignTaxonomy(st, "/data/processing/Reference/gg2_2024_09_toSpecies_trainset.fa.gz", multithread=TRUE) # Slowest part
+tax <- addSpecies(tax, "/data/processing/Reference/silva_species_assignment_v138.1.fa.gz")
 
 tax[,"Genus"] <- gsub("Escherichia/Shigella", "Escherichia", tax[,"Genus"]) # Reformat to be compatible with other data sources
 head(unname(tax))
@@ -134,7 +134,7 @@ tax <- readRDS(file.path(path.rds, "Taxonomy_Silva138.rds"))
 
 #Metadata
 ```{r}
-df <- read.csv("/hpc/group/ldavidlab/users/md486/HosSwab/metadata_16S.csv", header = TRUE, row.names = 1)
+df <- read.csv("/data/folder/metadata_16S.csv", header = TRUE, row.names = 1)
 head(df)
 ```
 
