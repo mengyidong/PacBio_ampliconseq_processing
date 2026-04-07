@@ -1,3 +1,20 @@
+# Taxonomy assignment for full-length ITS sequences using QIIME 2 in a Singularity container.
+#
+# Purpose:
+# Assign taxonomy to processed full-length ITS representative sequences after raw-read processing.
+# Taxonomic assignment is performed in QIIME 2 using the classify-sklearn method rather than within DADA2.
+#
+# Method:
+# - QIIME 2 plugin: feature-classifier classify-sklearn
+# - Database: UNITE full-length ITS reference database
+# - Classifier: pre-trained taxonomic classifier for full-length ITS sequences
+#
+# Runtime environment:
+# - Executed inside a Singularity container containing QIIME 2
+# - Example:
+#   singularity exec --bind <bind_path> <container.sif> qiime feature-classifier classify-sklearn ...
+
+
 #!/bin/bash
 #SBATCH --job-name=TaxonomyClassifier
 #SBATCH --mem=100000
