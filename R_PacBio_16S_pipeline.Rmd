@@ -1,5 +1,5 @@
 ---
-# PacBio 16S/ITS processing workflow for [PreMiEr Project/manuscript]
+# PacBio full-length 16S processing workflow for [PreMiEr Project/manuscript]
 # Adapted from Benjamin Callahan's public PacBio pipeline:
 # https://benjjneb.github.io/LRASManuscript/LRASms_fecal.html
 # Project-specific modifications by Mengyi Dong
