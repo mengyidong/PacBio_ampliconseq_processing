@@ -39,6 +39,7 @@ This release reflects the exact code used for the manuscript analyses. Later imp
 
 - R
 - dada2
+- Qiime 2
 
 ## Contact
 
