@@ -117,6 +117,13 @@ table(bim)
 
 sum(st[,bim])/sum(st)
 
+##Remove chimeras
+st.nochim <- removeBimeraDenovo(st, method="consensus", minFoldParentOverAbundance = 3.5, multithread=TRUE, verbose=TRUE)
+
+#Track reads
+summary_table <- cbind(ccs=prim[,1], primers=prim[,2], filtered=track[,2], denoised=sapply(dd, function(x) sum(x$denoised)), nonchim = rowSums(st.nochim))
+write.csv(summary_table, file = "dada2_summary_table.csv", row.names = TRUE)
+
 #Extract sample names from filenames:
 file.names <- basename(fns)
 sample.names <- sub(".*\\.hifi_reads\\.(.*?)\\.hifi_reads\\.fastq\\.gz", "\\1", file.names)
@@ -124,7 +131,7 @@ rownames(st) <- sample.names
 sample.names
 
 #Save processed objects
-saveRDS(st, file.path(path.rds, "Sequence_Table_16S.rds"))
+saveRDS(st.nochim, file.path(path.rds, "Sequence_Table_16S.rds"))
 saveRDS(tax, file.path(path.rds, "Taxonomy_Silva138_VT_UPF.rds"))
 
 #Reload processed data
